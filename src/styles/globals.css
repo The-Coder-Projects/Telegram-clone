@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  /* Telegram-like palette */
+  --tg-blue: #2aabee;
+  --tg-dark: #17212b;
+  --tg-darker: #0e1621;
+  --tg-surface: #1c2733;
+  --tg-border: #242f3d;
+  --tg-text: #c5c9cd;
+
+  --background: var(--tg-dark);
+  --foreground: var(--tg-text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-tg-blue: var(--tg-blue);
+  --color-tg-dark: var(--tg-dark);
+  --color-tg-darker: var(--tg-darker);
+  --color-tg-surface: var(--tg-surface);
+  --color-tg-border: var(--tg-border);
+  --color-tg-text: var(--tg-text);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Dark, thin scrollbars (best-effort cross-browser) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tg-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--tg-border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+

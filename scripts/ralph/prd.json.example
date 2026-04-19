@@ -1,0 +1,16 @@
+{
+  "projectName": "Telegram Clone",
+  "branchName": "ralph/initial-setup",
+  "stories": [
+    {
+      "id": "setup-1",
+      "description": "Initialize the project structure and basic dependencies",
+      "passes": true
+    },
+    {
+      "id": "setup-2",
+      "description": "Implement user authentication with Clerk",
+      "passes": false
+    }
+  ]
+}

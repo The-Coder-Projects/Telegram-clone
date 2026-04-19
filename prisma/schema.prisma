@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ChatType {
+  direct
+  group
+  channel
+}
+
+enum ChatMemberRole {
+  owner
+  admin
+  member
+}
+
+enum MessageType {
+  text
+  image
+  video
+  audio
+  document
+  sticker
+  gif
+  location
+  contact
+  poll
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String?  @unique
+  email     String?  @unique
+  name      String
+  username  String   @unique
+  passwordHash String?
+  bio       String?
+  avatarUrl String?
+  lastSeen  DateTime?
+  isPrivate Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  chats    ChatMember[]
+  messages Message[]
+  reads    MessageRead[]
+  reactions MessageReaction[]
+  hiddenMessages MessageHidden[]
+
+  contactsOwned   Contact[] @relation("OwnedContacts")
+  contactsOf      Contact[] @relation("ContactOf")
+
+  incomingChatRequests ChatRequest[] @relation("ChatRequestTo")
+  outgoingChatRequests ChatRequest[] @relation("ChatRequestFrom")
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  type      ChatType @default(direct)
+  name      String?
+  photo     String?
+  about     String?
+  inviteCode String? @unique
+  pinnedMessageId String?
+  createdAt DateTime @default(now())
+
+  members  ChatMember[]
+  messages Message[]
+
+  pinnedMessage Message? @relation("PinnedMessage", fields: [pinnedMessageId], references: [id], onDelete: SetNull)
+}
+
+model ChatMember {
+  chatId     String
+  userId     String
+  role       ChatMemberRole @default(member)
+  joinedAt   DateTime       @default(now())
+  mutedUntil DateTime?
+  isPinned   Boolean        @default(false)
+  lastReadMessageId String?
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadMessage Message? @relation("LastReadMessage", fields: [lastReadMessageId], references: [id], onDelete: SetNull)
+
+  @@id([chatId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  chatId    String
+  senderId  String
+  type      MessageType @default(text)
+  content   String      @default("")
+  replyToId String?
+  editedAt  DateTime?
+  deletedAt DateTime?
+  createdAt DateTime    @default(now())
+
+  chat   Chat    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User    @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo Message? @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies Message[] @relation("MessageReplies")
+
+  reads MessageRead[]
+  attachments Attachment[]
+  reactions MessageReaction[]
+  hiddenBy MessageHidden[]
+
+  pinnedIn Chat[] @relation("PinnedMessage")
+  lastReadBy ChatMember[] @relation("LastReadMessage")
+
+  @@index([chatId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+model MessageReaction {
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId, emoji])
+  @@index([userId, createdAt])
+}
+
+model MessageHidden {
+  messageId String
+  userId    String
+  hiddenAt  DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId, hiddenAt])
+}
+
+enum AttachmentKind {
+  image
+  video
+  audio
+  document
+}
+
+model Attachment {
+  id        String @id @default(cuid())
+  messageId String
+  kind      AttachmentKind
+  url       String
+  thumbUrl  String?
+  mime      String?
+  size      Int?
+  width     Int?
+  height    Int?
+  durationMs Int?
+  fileName  String?
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([kind])
+}
+
+model MessageRead {
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId, readAt])
+}
+
+model Contact {
+  ownerId   String
+  contactId String
+  createdAt DateTime @default(now())
+
+  owner   User @relation("OwnedContacts", fields: [ownerId], references: [id], onDelete: Cascade)
+  contact User @relation("ContactOf", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, contactId])
+  @@index([contactId])
+}
+
+enum ChatRequestStatus {
+  pending
+  accepted
+  declined
+}
+
+model ChatRequest {
+  id        String            @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  status    ChatRequestStatus @default(pending)
+  createdAt DateTime          @default(now())
+  respondedAt DateTime?
+
+  fromUser User @relation("ChatRequestFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ChatRequestTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, status])
+}
