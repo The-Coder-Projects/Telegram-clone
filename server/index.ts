@@ -13,7 +13,13 @@ loadEnv();
 const PORT = Number(process.env.PORT ?? 3001);
 const ORIGIN = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL!,
+  min: 1,
+  max: 10,
+  idleTimeoutMillis: 60000,
+  allowExitOnIdle: true,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -89,7 +95,6 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: ORIGIN, credentials: true },
-  transports: ["websocket"],
 });
 
 io.use(async (socket, next) => {
