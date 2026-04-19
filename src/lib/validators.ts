@@ -69,7 +69,7 @@ export const registerSchema = z.object({
     .min(3)
     .max(24)
     .regex(
-      /^[a-z0-9_-]+$/i,
+      /^@?[a-z0-9_-]+$/i,
       "Username may contain letters, numbers, underscores, hyphens"
     )
     .transform((v) => v.replace(/^@/, "").toLowerCase()),
